@@ -282,6 +282,49 @@
 
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  const firebaseConfig = {
+    apiKey: "AIzaSyA7DSqQ6LB6NiO41Qzg-ohEEHjJHJlKMW0",
+    authDomain: "missive-fdb56.firebaseapp.com",
+    projectId: "missive-fdb56",
+    storageBucket: "missive-fdb56.firebasestorage.app",
+    messagingSenderId: "624284371172",
+    appId: "1:624284371172:web:41007dbbd69daf859384f1",
+    measurementId: "G-MFC8B1SE5G"
+  };
+
+  if(!window.storage && window.firebase){
+    const app = window.firebase.apps.length ? window.firebase.app() : window.firebase.initializeApp(firebaseConfig);
+    const records = app.firestore().collection('missiveStorage');
+    const documentId = (key, shared) => encodeURIComponent((shared ? 's:' : 'p:') + key);
+
+    window.storage = {
+      async get(key, shared){
+        const snapshot = await records.doc(documentId(key, shared)).get();
+        return snapshot.exists ? snapshot.data() : null;
+      },
+      async set(key, value, shared){
+        const record = {key, value, shared};
+        await records.doc(documentId(key, shared)).set(record);
+        return record;
+      },
+      async delete(key, shared){
+        await records.doc(documentId(key, shared)).delete();
+        return {key, deleted:true, shared};
+      },
+      async list(prefix, shared){
+        const snapshot = await records.where('shared', '==', shared)
+          .where('key', '>=', prefix).where('key', '<', prefix + '\uf8ff').get();
+        return {keys:snapshot.docs.map(doc => doc.data().key), prefix, shared};
+      }
+    };
+  }
+})();
+</script>
+
 <script>
 (function(){
   if(!window.storage){
